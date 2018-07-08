@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" type="text/css" href="css/bootstrap.css"/>
+    <link rel="stylesheet" type="text/css" href="css/pb.css"/>
+
+
+    <title>Block</title>
+    <script src="js/jquery-1.12.4.min.js" type="text/javascript" charset="utf-8"></script>
+    <script src="js/bootstrap.js" type="text/javascript" charset="utf-8"></script>
+    <script src="js/pb.js" type="text/javascript" charset="utf-8"></script>
+    <script src="js/jsrsasign-all-min.js" type="text/javascript" charset="utf-8"></script>
+</head>
+<body style="margin: 20px">
+
+
+<script>
+    function addGenesis() {
+        //开启进度条
+        loading.baosight.showPageLoadingMsg(false)
+        var content = $("#note_in").val();
+        $.post("/addGenesis", "genesis=" + content, function (data) {
+            //显示controller返回的数据
+            $("#result").text(data)
+            //把输入框中的内容清空
+            $("#note_in").val("")
+            //关闭进度条
+            loading.baosight.hidePageLoadingMsg()
+            //展示最新的数据结果
+            showList();
+        })
+
+    }
+
+    function addNote() {
+        //开启进度条
+
+        var content = $("#note_in").val();
+        var senderPrivateKey = $("#senderPrivateKey").val();
+        var senderPublicKey = $("#senderPublicKey").val();
+        var receiverPublicKey = $("#receiverPublicKey").val();
+        loading.baosight.showPageLoadingMsg(false)
+        //js方式生成签名
+        var prvKey = KEYUTIL.getKey(senderPrivateKey);
+        var sig = new KJUR.crypto.Signature({"alg": "SHA256withRSA"});
+        sig.init(prvKey);
+        sig.updateString(content)
+        var sigValueHex = sig.sign()
+        console.log(sigValueHex);
+
+        $.post("/addNote",{
+            senderPublicKey:senderPublicKey,
+            receiverPublicKey:receiverPublicKey,
+            signature:sigValueHex,
+            content:content
+        },function (data) {
+            $("#result").text(data)
+            $("#note_in").val("")
+            showList();
+            loading.baosight.hidePageLoadingMsg()
+        })
+
+
+    }
+    function addNote2() {
+        //开启进度条
+        loading.baosight.showPageLoadingMsg(false)
+        var content = $("#note_in").val();
+        $.post("/addNote", "note=" + content, function (data) {
+            //显示controller返回的数据
+            $("#result").text(data)
+            //把输入框中的内容清空
+            $("#note_in").val("")
+            //关闭进度条
+            loading.baosight.hidePageLoadingMsg()
+            showList();
+
+        })
+
+    }
+
+    function showList() {
+        loading.baosight.showPageLoadingMsg(false)
+        $("#idTbody").html("");
+        $.get("/showList", function (data) {
+            //暂时随便展示一点东西
+            for (var i = 0; i < data.length; i++) {
+                var block = data[i];
+                var id = block.id;
+                var content = block.content;
+                var hash = block.hash;
+                var nonce = block.nonce;
+                var preHash = block.preHash;
+                $("#idTbody").append(" <tr><th>" + id + "</th><th>" + content + "</th><th>" + hash + "</th><th>" + nonce + "</th><th>" + preHash + "</th></tr>")
+            }
+            loading.baosight.hidePageLoadingMsg()
+        })
+    }
+
+    function check() {
+        loading.baosight.showPageLoadingMsg(false)
+        $.get("/check", function (data) {
+            $("#result").html(data)
+            loading.baosight.hidePageLoadingMsg()
+        })
+    }
+
+    //页面加载成功后立马刷新数据
+    $(function () {
+        showList();
+    })
+
+</script>
+<label>
+    发送方的私钥
+</label>
+<textarea class="form-control" id="senderPrivateKey">-----BEGIN PRIVATE KEY-----
+MIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQCagZNNhWgw5kSXAW46i82oKMTp
+KiUxSaY3RZf3u3QWFcwJDTIhFd8SZdWEOZ7Q0LYlf0bDKdzopeYOiodKScmwA7voHJfRrQekymWJ
+C54uGrQu2GZ8W2cGrdyFKvD+LwMct1j+9gRuQXH4Y1xW8a+je9kcd3ejlayp2AdV7ir3sQ4TIOwD
+VhmMlzbNoGwugzy82sf9X/SO6JUrh8a5KuWQ3WUAuL9mEVTtZBss0b42TKwRRve1ZWoV5QqyCwHf
+2q1ylVFyaaZXa9E9iEeMoyaavEw0AG9IjCdNXqPvQAYUp+07eOSK0G+nNc1BsN9IX+mEvONs9KNk
+k5LKOzmhCBlBAgMBAAECggEAOTQQHXtu/+vBKUdWUEbCdafif5EjBASIjZ4ujYHRkPuw9wjzrlwy
+otUhIDtVGWqshWWCBW/SYjBJ5MhVHqQDEC/RujYb3314fwKQZRTwE5G/dDiaeSA+HLLyGjuzzegJ
+9u/K+1qKeWexkoz2+xmwNY786xUwLliT/K4GyUHMlrdZcWHsOlAPBPbMXhfbhgqTNwbJtHjNGuqt
+qWOV15CNaA6SgCA6vuKrfOWUkCcVnlRYqimb4XG1pigyUKlLwTvjX0f1opfvC1L7sHiZkWBrcfD6
+ILj2BIvBW4A93ndfarao+FRAfg2NabdNjphW5tnZAy5Cmm2aSQn5ukAYTWkAAQKBgQDrGlQgT4rR
+5cakzjueiYm8cDajUCeZ0naRBaDb51Sq2z3PhmU3b+cG9fMSdygQIxjYENFSQ9prSB/AZjYB8nlI
+UBudwXdVKEH7KXiNU5yVnhFr0LK429dM7Q5y7cJEB0/JLkT3lzryJjM/N6bVqizfWCytARe4Bg2P
+kjcf8THNAQKBgQCoPU0dyJjKre2B0x77wG0fYrvwDtmisbpt8uiHcSAzMOWc61DMwso6DTTsHsr1
+gkIwBNMaZX+cOGWR8mi+/kPjn8gP6zYpT42yl4TcIfZPS4oVoSPG01L3KofMvxf88dk9zkQfZrua
+zNcYEDkT1ulbELenLdK9uHRCI+iOsscMQQKBgQCHqmfFRWE8AjYAwClTMNbUcIR29TgE4Zgd03uh
+qfoHpgAjEtCxjtdoAuFDVJM/zKD3fazspc8SfUolQlYEBaHLAr8M56ku8M4yWxn/o7IF/HLdHk8j
+sWiqMVlXJLAnhXibBSIzJYeUWErWPgz92veN4lnVc332aTfGE3/P5OTyAQKBgEQ5F5yMS+lkvnt2
+8YmFbrrbfvrKCtc+2yra5hCGf1hC69nGUu21z+vajytxETydpdlzG2gI4Mao2AdnFbLdyQn1MVvD
+NiNqbzuM1gOuggOFzmkW/zsRVwOD663LkB6ytDWr/1P8hPcxOcg4S+0PqXGUReU1X9AvjHWFujij
+prQBAoGAPEz50/0rkTyAGZTCvFEWVVnqr0KOH+KpkMk8tocIZHipvknwOMf5/zUOGk5+b/PMOHAb
+nOLSr98Pb/kv3IIMl7RPBDE18Bb8yq7sJg4jwr2BPOysqLUoZDUcROHNPTvfzVZiHlh8bQNCtNbD
+gntnyK1Ukx14Ro04NQm+QgI+2Ww=
+-----END PRIVATE KEY-----</textarea>
+<label>
+    发送方的公钥
+</label>
+<textarea class="form-control" id="senderPublicKey">MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAmoGTTYVoMOZElwFuOovNqCjE6SolMUmm
+N0WX97t0FhXMCQ0yIRXfEmXVhDme0NC2JX9Gwync6KXmDoqHSknJsAO76ByX0a0HpMpliQueLhq0
+LthmfFtnBq3chSrw/i8DHLdY/vYEbkFx+GNcVvGvo3vZHHd3o5WsqdgHVe4q97EOEyDsA1YZjJc2
+zaBsLoM8vNrH/V/0juiVK4fGuSrlkN1lALi/ZhFU7WQbLNG+NkysEUb3tWVqFeUKsgsB39qtcpVR
+cmmmV2vRPYhHjKMmmrxMNABvSIwnTV6j70AGFKftO3jkitBvpzXNQbDfSF/phLzjbPSjZJOSyjs5
+oQgZQQIDAQAB</textarea>
+<label>
+    接收方的公钥
+</label>
+<textarea class="form-control" id="receiverPublicKey">MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAlY9qNk14+kJljl7RAC/oGHiQU9Ex/O0R
+VTbVmrogWShfwjVq5F14RmaxyLT6Gog/tPZHlFXZzrNQzg37Ia6LbHzNdTr3XH07DEKYiSPV9XCx
+Ho+t0tXRGXnB0tfME2fXDkpmjIb/rysnSLFxNwpyUbQflyFrt+wnhMAAPAA4g4NmciXfMLOL0fAB
++v7oL1kEvmiGsr0EOlHsduIboiiNcpFotC1gJji/Nks9RweuG6n/8iEcYEUfOM4h8TG6Wxa4o6t/
+8L3GUIg4ULSRSuXdqZYU9Zm8m/ksnE4P+THOZxWo2hAfRRDEIho2eXTMJABR9d7HIoTzrKCteZ0O
+0xNlbQIDAQAB</textarea>
+<label>
+    转账信息
+</label>
+
+<input type="text" class="form-control" id="note_in" placeholder="请输入信息" style="width: 500px;"><br/>
+<div class="btn-group" role="group" aria-label="...">
+    <button type="button" class="btn btn-default" onclick="addGenesis()">添加封面</button>
+    <button type="button" class="btn btn-default" onclick="addNote()">添加记录</button>
+    <button type="button" class="btn btn-default" onclick="check()">检验数据</button>
+</div>
+<br/><br/>
+<div id="result" class="bg-info" style="border-radius: 5px;width: 80%;font-size: 1.2em;padding: 10px;">1</div>
+<br/><br/>
+<input type="text" class="form-control" id="idNode" placeholder="请输入节点">
+<!--按钮组-->
+<div class="btn-group btn-group-lg">
+    <button type="button" class="btn btn-default" onclick="regist()">注册节点</button>
+    <button type="button" class="btn btn-default" onclick="conn()">连接节点</button>
+    <button type="button" class="btn btn-default" onclick="broadcast()">广播</button>
+    <button type="button" class="btn btn-default" onclick="syncData()">同步</button>
+</div>
+<script>
+    function regist() {
+        var node = $("#idNode").val()
+        $.post("/regist","node="+node,function (data) {
+            $("#result").text(data)
+            //把输入框中的内容清空
+            $("#note_in").val("")
+        })
+    }
+    function conn() {
+    $.get("/conn",function (data) {
+        $("#result").text(data)
+    })
+        
+    }
+    function broadcast() {
+        var node = $("#idNode").val()
+        $.post("/broadcast","msg="+node,function (data) {
+            $("#result").text(data)
+            //把输入框中的内容清空
+            $("#note_in").val("")
+        })
+        
+    }
+    function syncData() {
+        $.get("/syncData",function (data) {
+            $("#result").text(data)
+        })
+        
+    }
+</script>
+<table class="table">
+    <thead>
+    <tr>
+        <th>编号</th>
+        <th>内容</th>
+        <th>哈希值</th>
+        <th>工作量</th>
+        <th>上一个Hash</th>
+
+
+    </tr>
+    </thead>
+    <tbody id="idTbody">
+    </tbody>
+</table>
+
+
+</body>
+</html>
